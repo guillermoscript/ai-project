@@ -7,3 +7,4 @@ node_modules
 /src/audio
 /src/audios
 /src/user-documents
+/src/python/__pycache__

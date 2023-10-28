@@ -1,0 +1,8 @@
+openai
+pydub
+python-dotenv
+flask
+langchain
+PyMuPDF
+supabase
+tiktoken

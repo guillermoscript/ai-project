@@ -17,7 +17,11 @@ COPY . .
 EXPOSE 5040
 
 # Set the environment variable for the OpenAI API key
-ENV OPENAI_API_KEY=${OPEN_AI_KEY}
+ENV OPEN_AI_KEY=${OPEN_AI_KEY}
+# Set the environment variable for the Supabase API key
+ENV SUPABASE_KEY=${SUPABASE_KEY}
+ENV SUPABASE_URL=${SUPABASE_URL}
+
 
 # Run the Flask application
 CMD ["python", "app.py"]

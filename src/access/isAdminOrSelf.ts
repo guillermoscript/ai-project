@@ -1,45 +1,32 @@
 import { Access } from "payload/config";
+import { User } from "payload/generated-types";
 
-export const isAdminOrSelf: any = ({ req: { user } }: any) => {
-  // Need to be logged in
-  if (user) {
-    // If user has role of 'admin'
-    if (user.roles?.includes('admin')) {
+export const isAdminOrSelf: Access<any, User> = async ({ req: { user, payload } }) => {
+  if (!user) {
+    return false;
+  }
+  if (typeof user === 'string') {
+    const userDoc = await payload.findByID({
+      collection: 'users',
+      id: user,
+    });
+
+    if (userDoc?.roles.includes('admin')) {
       return true;
     }
-
-    // If any other type of user, only provide access to themselves
     return {
-      or: [
-        {
-          createdBy: {
-            equals: user.id,
-          },
-        },
-        {
-          user: {
-            equals: user.id,
-          },
-        },
-        {
-          student: {
-            equals: user.id,
-          },
-        },
-        {
-          teacher: {
-            equals: user.id,
-          },
-        },
-        {
-          id: {
-            equals: user.id,
-          },
-        }
-      ],
+      user: {
+        equals: user,
+      },
+    }
+  } else {
+    if (user?.roles.includes('admin')) {
+      return true;
+    }
+    return {
+      user: {
+        equals: user.id,
+      },
     }
   }
-
-  // Reject everyone else
-  return false;
-}
+};

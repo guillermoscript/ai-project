@@ -4,7 +4,7 @@ export type SubscriptionCreateDto = Omit<Subscription, 'id' | 'createdAt' | 'upd
 
 type periodicity = 'monthly' | 'bimonthly' | 'quarterly' | 'biannual' | 'annual' | 'custom'
 
-export default function createSubscriptionDto(doc: Order, product: Product, plan: Plan['id'], periodicity: SubscriptionCreateDto['periodicity'] = 'monthly') {
+export default function createSubscriptionDto(doc: Order, product: Product, plan: Plan['id'], periodicity: SubscriptionCreateDto['periodicity'] = 'monthly', functionalities: SubscriptionCreateDto['functionalities'] = 'free'): SubscriptionCreateDto | undefined {
 
     const periodicityStates: Record<periodicity, number> = {
         'monthly': 1,
@@ -42,6 +42,7 @@ export default function createSubscriptionDto(doc: Order, product: Product, plan
         periodicity: periodicity,
         plan: plan,
         product: product.id,
+        functionalities: functionalities,
     }
 
     return subscriptionData

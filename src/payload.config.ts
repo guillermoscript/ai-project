@@ -1,7 +1,6 @@
 import { buildConfig } from 'payload/config';
 import path from 'path';
 import Users from './collections/Users';
-import { payloadCloud } from '@payloadcms/plugin-cloud';
 import Categories from './collections/Categories';
 import Comments from './collections/Comments';
 import Notifications from './collections/Notifications';
@@ -15,6 +14,29 @@ import pagoMovil from './globals/pago-movil';
 import zelle from './globals/zelle';
 import ProductPrices from './collections/ProductPrices';
 import Currencies from './collections/Currencies';
+import Metric from './collections/Metric';
+import gpt4 from './globals/gpt4';
+import gpt35 from './globals/gpt3-5';
+import whisper from './globals/whisper';
+import Audios from './collections/Audios';
+import Chats from './collections/Chats';
+import Messages from './collections/Messages';
+import UserTranscriptions from './collections/UserTranscriptions';
+import Prompts from './collections/Prompts';
+import stripePlugin from "@payloadcms/plugin-stripe";
+import { createCheckoutSession } from './endpoints/stripe/create-checkout-session';
+import { chargeCheckoutSession } from './endpoints/stripe/charge-session-checkout';
+import { createPaymentSession } from './endpoints/stripe/create-payment-method';
+import payload from 'payload';
+import { Plan, Product, User } from './payload-types';
+import { binanceOrderCreationHandler } from './endpoints/binance/binance-order';
+import { binanceWebhookHandler } from './endpoints/binance/webhook';
+import { audioUpload, audioUserTranscription, fileUploadResume, transcriptionSummary } from './endpoints/ai/audio';
+import UserDocuments from './collections/UserDocuments';
+import { UploadUserPdf } from './endpoints/ai/pdf';
+
+const mockModulePath = path.resolve(__dirname, './emptyModuleMock.js')
+export const srcPath = path.resolve(__dirname, '../src')
 
 export default buildConfig({
   serverURL: 'http://localhost:3000',
@@ -23,32 +45,66 @@ export default buildConfig({
     meta: {
       titleSuffix: 'Admin - Summary App',
     },
+    webpack: config => ({
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: {
+          ...config.resolve?.alias,
+          [path.resolve(__dirname, 'endpoints/stripe/create-checkout-session')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/stripe/charge-session-checkout')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/stripe/create-payment-method')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/binance/binance-order')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/binance/webhook')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/ai/audio')]: mockModulePath,
+          [path.resolve(__dirname, 'endpoints/ai/pdf')]: mockModulePath,
+          stripe: mockModulePath,
+          express: mockModulePath,
+        },
+      },
+    }),
   },
   collections: [
+    Audios,
     Categories,
     Comments,
     Currencies,
+    Chats,
     Media,
+    Metric,
+    Messages,
     Notifications,
     PaymentMethods,
     Plans,
     ProductPrices,
     Products,
+    Prompts,
     Subscriptions,
     Orders,
     Users,
+    UserTranscriptions,
+    UserDocuments
   ],
   globals: [
     pagoMovil,
-    zelle
+    zelle,
+    gpt4,
+    gpt35,
+    whisper,
   ],
   cors: [
     'http://localhost:3001',
     'http://localhost:3000',
+    'https://checkout.stripe.com',
+    'https://bpay.binanceapi.com',
+    'https://binance.com'
   ].filter(Boolean),
   csrf: [
     'http://localhost:3001',
     'http://localhost:3000',
+    'https://checkout.stripe.com',
+    'https://bpay.binanceapi.com',
+    'https://binance.com'
   ].filter(Boolean),
   typescript: {
     outputFile: path.resolve(__dirname, 'payload-types.ts'),
@@ -57,22 +113,171 @@ export default buildConfig({
     schemaOutputFile: path.resolve(__dirname, 'generated-schema.graphql'),
   },
   plugins: [
-    payloadCloud()
+    stripePlugin({
+      stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+      isTestKey: true,
+      logs: true,
+      sync: [
+        {
+          collection: 'users',
+          stripeResourceType: 'customers',
+          stripeResourceTypeSingular: 'customer',
+          fields: [
+            {
+              fieldPath: 'email',
+              stripeProperty: 'email',
+            },
+            // NOTE: nested fields are not supported yet, because the Stripe API keeps everything separate at the top-level
+            // because of this, we need to wire our own custom webhooks to handle these changes
+            // In the future, support for nested fields may look something like this:
+            // {
+            //   field: 'subscriptions.name',
+            //   property: 'plan.name',
+            // }
+          ],
+        },
+      ],
+      stripeWebhooksEndpointSecret: process.env.STRIPE_WEBHOOKS_ENDPOINT_SECRET,
+      webhooks: {
+        'checkout.session.completed': async ({ event, stripe, stripeConfig }) => {
+
+          const data = event.data.object;
+          const metadata = data.metadata;
+          const productId = metadata.productId;
+          const stripeCustomerID = data.customer;
+
+          // find user and product by stripeCustomerID and productId, then get plan functionalities, create order and update user functionalities
+          try {
+            const user = await payload.find<'users'>({
+              collection: 'users',
+              where: {
+                stripeCustomerID: {
+                  equals: stripeCustomerID,
+                },
+              },
+            });
+
+            const product = await payload.findByID<'products'>({
+              collection: 'products',
+              id: productId,
+              depth: 3,
+            });
+            const plan = product?.productType as Plan;
+
+            const order = await payload.create<'orders'>({
+              collection: 'orders',
+              data: {
+                products: productId,
+                customer: user.docs[0].id,
+                status: 'active',
+                type: 'subscription',
+                amount: data.amount_total / 100,
+              },
+            });
+
+            // update user functionallity
+            const updatedUser = await payload.update<'users'>({
+              collection: 'users',
+              id: user.docs[0].id,
+              data: {
+                functionalities: plan.functionalities,
+              },
+            });
+
+          } catch (error) {
+            console.log(error, '<----------- error');
+          }
+        },
+        'payment_intent.succeeded': async ({ event, stripe, stripeConfig }) => {
+
+          const data = event.data.object;
+          const metadata = data.metadata;
+          const orderId = metadata.orderId;
+
+          try {
+            const order = await payload.findByID<'orders'>({
+              collection: 'orders',
+              id: orderId,
+              depth: 3,
+            });
+
+            const user = order.customer as User;
+            const productPlan = order.products[0] as Product;
+            const plan = productPlan.productType as Plan;
+
+            const updatedOrder = await payload.update<'orders'>({
+              collection: 'orders',
+              id: order?.id,
+              data: {
+                status: 'active',
+              },
+            });
+
+            const updatedUser = await payload.update<'users'>({
+              collection: 'users',
+              id: user?.id,
+              data: {
+                functionalities: plan.functionalities,
+              },
+            });
+
+          } catch (error) {
+            console.log(error, '<----------- error');
+          }
+        },
+      }
+    }),
   ],
-  // endpoints: [
-  //   {
-  //     path: '/v1/inactivate-subscription-and-create-renewal-order',
-  //     method: 'get',
-  //     handler: async (req, res) => {
-  //       try {
-  //         const result = await runInactivateSubscriptionAndCreateRenewalOrder();
-  //         console.log(result, '<----------- result');
-  //         res.status(StatusCodes.OK).send(result);
-  //       } catch (error) {
-  //         console.log(error, '<----------- error');
-  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-  //       }
-  //     },
-  //   }
-  // ]
+  endpoints: [
+    {
+      path: '/create-checkout-session',
+      method: 'post',
+      handler: createCheckoutSession,
+    },
+    {
+      path: '/charge-session-checkout',
+      method: 'post',
+      handler: chargeCheckoutSession,
+    },
+    {
+      path: '/create-payment-method',
+      method: 'post',
+      handler: createPaymentSession,
+    },
+    {
+      path: '/create-binance-order',
+      method: 'post',
+      handler: binanceOrderCreationHandler,
+    },
+    {
+      path: '/binance/webhook',
+      method: 'post',
+      handler: binanceWebhookHandler,
+    },
+    {
+      path: '/files/upload',
+      method: 'post',
+      handler: fileUploadResume
+    },
+    {
+      path: '/transcription/summary',
+      method: 'post',
+      handler: transcriptionSummary
+    },
+    {
+      path: '/audio/upload',
+      method: 'post',
+      handler: audioUpload
+    },
+    {
+      path: '/audio/user-transcription',
+      method: 'post',
+      handler: audioUserTranscription
+    },
+    {
+      path: '/pdf/embedding',
+      method: 'post',
+      handler: UploadUserPdf
+    }
+  ]
 });

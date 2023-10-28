@@ -8,29 +8,79 @@
 
 export interface Config {
   collections: {
+    audios: Audio;
     categories: Category;
     comments: Comment;
     currencies: Currency;
+    chats: Chat;
     medias: Media;
+    metrics: Metric;
+    messages: Message;
     notifications: Notification;
     'payment-methods': PaymentMethod;
     plans: Plan;
     'product-prices': ProductPrice;
     products: Product;
+    prompts: Prompt;
     subscriptions: Subscription;
     orders: Order;
     users: User;
+    'user-transcriptions': UserTranscription;
+    'user-documents': UserDocument;
   };
   globals: {
     'pago-movil': PagoMovil;
     zelle: Zelle;
+    gpt4: Gpt4;
+    gpt35: Gpt35;
+    whisper: Whisper;
   };
+}
+export interface Audio {
+  id: string;
+  user: string | User;
+  slug?: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string;
+  filename: string;
+  mimeType?: string;
+  filesize?: number;
+  width?: number;
+  height?: number;
+}
+export interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  address?: string;
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other';
+  roles?: ('admin' | 'subscriber' | 'editor' | 'user')[];
+  functionalities?: 'basic' | 'premium' | 'professional' | 'enterprise' | 'custom' | 'free';
+  stripeCustomerID?: string;
+  stripeID?: string;
+  skipSync?: boolean;
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean;
+  apiKey?: string;
+  apiKeyIndex?: string;
+  email: string;
+  resetPasswordToken?: string;
+  resetPasswordExpiration?: string;
+  salt?: string;
+  hash?: string;
+  loginAttempts?: number;
+  lockUntil?: string;
+  password?: string;
 }
 export interface Category {
   id: string;
   name: string;
   description: string;
-  image: string | Media;
+  image?: string | Media;
   createdBy?: string | User;
   lastModifiedBy?: string | User;
   updatedAt: string;
@@ -77,27 +127,6 @@ export interface Media {
     };
   };
 }
-export interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  address?: string;
-  birthDate?: string;
-  gender?: 'male' | 'female' | 'other';
-  roles?: ('admin' | 'subscriber' | 'editor' | 'user')[];
-  score?: number;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string;
-  resetPasswordExpiration?: string;
-  salt?: string;
-  hash?: string;
-  loginAttempts?: number;
-  lockUntil?: string;
-  password?: string;
-}
 export interface Comment {
   id: string;
   comment: string;
@@ -142,6 +171,7 @@ export interface Plan {
   name: string;
   description: string;
   status?: 'active' | 'inactive';
+  functionalities?: 'basic' | 'premium' | 'professional' | 'enterprise' | 'custom' | 'free';
   category: string[] | Category[];
   subscriptions?: string[] | Subscription[];
   periodicity?: 'monthly' | 'bimonthly' | 'quarterly' | 'biannual' | 'annual' | 'custom';
@@ -161,6 +191,7 @@ export interface Subscription {
   plan?: string | Plan;
   periodicity?: 'monthly' | 'bimonthly' | 'quarterly' | 'biannual' | 'annual' | 'custom';
   order?: string | Order;
+  functionalities?: 'basic' | 'premium' | 'professional' | 'enterprise' | 'custom' | 'free';
   updatedAt: string;
   createdAt: string;
 }
@@ -185,9 +216,9 @@ export interface Order {
 }
 export interface PaymentMethod {
   id: string;
-  paymentsOfUser?: string[] | User[];
+  paymentsOfUser?: string | User;
   title: string;
-  paymentMethodType: 'zelle' | 'paypal' | 'pagoMovil' | 'cash' | 'bankTransfer';
+  paymentMethodType: 'zelle' | 'paypal' | 'pagoMovil' | 'cash' | 'bankTransfer' | 'crypto' | 'stripe' | 'binance';
   zelle?: {
     zelleEmail?: string;
     zelleName?: string;
@@ -243,6 +274,10 @@ export interface PaymentMethod {
       | 'banco-venezolano-de-credito'
       | 'banesco';
   };
+  stripe?: {
+    stripePaymentMethodId?: string;
+  };
+  default?: boolean;
   createdBy?: string | User;
   slug?: string;
   updatedAt: string;
@@ -263,6 +298,193 @@ export interface Currency {
   symbol: string;
   exchangeRate?: number;
   slug?: string;
+  code:
+    | 'usd'
+    | ' aed'
+    | ' afn'
+    | ' all'
+    | ' amd'
+    | ' ang'
+    | ' aoa'
+    | ' ars'
+    | ' aud'
+    | ' awg'
+    | ' azn'
+    | ' bam'
+    | ' bbd'
+    | ' bdt'
+    | ' bgn'
+    | ' bhd'
+    | ' bif'
+    | ' bmd'
+    | ' bnd'
+    | ' bob'
+    | ' brl'
+    | ' bsd'
+    | ' bwp'
+    | ' byn'
+    | ' bzd'
+    | ' cad'
+    | ' cdf'
+    | ' chf'
+    | ' clp'
+    | ' cny'
+    | ' cop'
+    | ' crc'
+    | ' cve'
+    | ' czk'
+    | ' djf'
+    | ' dkk'
+    | ' dop'
+    | ' dzd'
+    | ' egp'
+    | ' etb'
+    | ' eur'
+    | ' fjd'
+    | ' fkp'
+    | ' gbp'
+    | ' gel'
+    | ' gip'
+    | ' gmd'
+    | ' gnf'
+    | ' gtq'
+    | ' gyd'
+    | ' hkd'
+    | ' hnl'
+    | ' hrk'
+    | ' htg'
+    | ' huf'
+    | ' idr'
+    | ' ils'
+    | ' inr'
+    | ' isk'
+    | ' jmd'
+    | ' jod'
+    | ' jpy'
+    | ' kes'
+    | ' kgs'
+    | ' khr'
+    | ' kmf'
+    | ' krw'
+    | ' kwd'
+    | ' kyd'
+    | ' kzt'
+    | ' lak'
+    | ' lbp'
+    | ' lkr'
+    | ' lrd'
+    | ' lsl'
+    | ' mad'
+    | ' mdl'
+    | ' mga'
+    | ' mkd'
+    | ' mmk'
+    | ' mnt'
+    | ' mop'
+    | ' mur'
+    | ' mvr'
+    | ' mwk'
+    | ' mxn'
+    | ' myr'
+    | ' mzn'
+    | ' nad'
+    | ' ngn'
+    | ' nio'
+    | ' nok'
+    | ' npr'
+    | ' nzd'
+    | ' omr'
+    | ' pab'
+    | ' pen'
+    | ' pgk'
+    | ' php'
+    | ' pkr'
+    | ' pln'
+    | ' pyg'
+    | ' qar'
+    | ' ron'
+    | ' rsd'
+    | ' rub'
+    | ' rwf'
+    | ' sar'
+    | ' sbd'
+    | ' scr'
+    | ' sek'
+    | ' sgd'
+    | ' shp'
+    | ' sle'
+    | ' sos'
+    | ' srd'
+    | ' std'
+    | ' szl'
+    | ' thb'
+    | ' tjs'
+    | ' tnd'
+    | ' top'
+    | ' try'
+    | ' ttd'
+    | ' twd'
+    | ' tzs'
+    | ' uah'
+    | ' ugx'
+    | ' uyu'
+    | ' uzs'
+    | ' vnd'
+    | ' vuv'
+    | ' wst'
+    | ' xaf'
+    | ' xcd'
+    | ' xof'
+    | ' xpf'
+    | ' yer'
+    | ' zar'
+    | ' zmw'
+    | ' usdc'
+    | ' btn'
+    | ' ghs'
+    | ' eek'
+    | ' lvl'
+    | ' svc'
+    | ' vef'
+    | ' ltl'
+    | ' sll';
+  updatedAt: string;
+  createdAt: string;
+}
+export interface Chat {
+  id: string;
+  name: string;
+  description?: string;
+  users?: string[] | User[];
+  type?: 'group' | 'private' | 'bot' | 'qa';
+  updatedAt: string;
+  createdAt: string;
+}
+export interface Metric {
+  id: string;
+  value:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  user: string | User;
+  slug?: string;
+  updatedAt: string;
+  createdAt: string;
+}
+export interface Message {
+  id: string;
+  chat: string | Chat;
+  user: string | User;
+  type: 'text' | 'image' | 'audio' | 'ai';
+  ai?: string;
+  text?: string;
+  image?: string | Media;
+  audio?: string | Audio;
   updatedAt: string;
   createdAt: string;
 }
@@ -289,6 +511,65 @@ export interface Notification {
   createdBy?: string | User;
   updatedAt: string;
   createdAt: string;
+}
+export interface Prompt {
+  id: string;
+  prompt: string;
+  description: string;
+  category: string[] | Category[];
+  createdBy?: string | User;
+  lastModifiedBy?: string | User;
+  updatedAt: string;
+  createdAt: string;
+}
+export interface UserTranscription {
+  id: string;
+  user?: string | User;
+  audio?: string | Audio;
+  transcriptionText?: string;
+  summary?: string;
+  updatedAt: string;
+  createdAt: string;
+}
+export interface UserDocument {
+  id: string;
+  createdBy?: string | User;
+  lastModifiedBy?: string | User;
+  slug?: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string;
+  filename?: string;
+  mimeType?: string;
+  filesize?: number;
+  width?: number;
+  height?: number;
+  sizes?: {
+    thumbnail?: {
+      url?: string;
+      width?: number;
+      height?: number;
+      mimeType?: string;
+      filesize?: number;
+      filename?: string;
+    };
+    card?: {
+      url?: string;
+      width?: number;
+      height?: number;
+      mimeType?: string;
+      filesize?: number;
+      filename?: string;
+    };
+    tablet?: {
+      url?: string;
+      width?: number;
+      height?: number;
+      mimeType?: string;
+      filesize?: number;
+      filename?: string;
+    };
+  };
 }
 export interface PagoMovil {
   id: string;
@@ -321,6 +602,30 @@ export interface Zelle {
   email: string;
   zelleHolder: string;
   bank: string;
+  updatedAt?: string;
+  createdAt?: string;
+}
+export interface Gpt4 {
+  id: string;
+  input8: number;
+  output8: number;
+  input32: number;
+  output32: number;
+  updatedAt?: string;
+  createdAt?: string;
+}
+export interface Gpt35 {
+  id: string;
+  input4: number;
+  output4: number;
+  input16: number;
+  output16: number;
+  updatedAt?: string;
+  createdAt?: string;
+}
+export interface Whisper {
+  id: string;
+  input: number;
   updatedAt?: string;
   createdAt?: string;
 }

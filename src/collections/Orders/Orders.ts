@@ -1,5 +1,5 @@
-;
-import { CollectionConfig } from 'payload/types';
+
+import { CollectionConfig, PayloadRequest } from 'payload/types';
 import { anyone } from '../../access/anyone';
 import { isAdmin } from '../../access/isAdmin';
 import { createdByField } from '../../fields/createdBy';
@@ -84,93 +84,6 @@ const Orders: CollectionConfig = {
                     value: 'refunded',
                 }
             ],
-            hooks: {
-                afterChange: [
-                    // createOrderAbleAfterChange
-                    async ({ req, originalDoc }) => {
-                        const docType: Order = originalDoc
-                        const status = docType.status
-                        const type = docType.type
-                        const { payload, user } = req
-
-                        if (!user) {
-                            return
-                        }
-
-                        if (status === 'inactive' || status === 'pending' || status === 'canceled' || status === 'finished' || status === 'refunded') {
-                            return
-                        }
-                        
-                        console.log('status', status)
-
-                        if (type === "order") {
-                            return
-                        }
-
-                        const typeOfOrder = docType?.products?.map(product => {
-                            if (typeof product === 'string') {
-                                return product
-                            } else {
-                                return product.id
-                            }
-                        })
-
-                        const [purchasedProducts, purchasedProductsError] = await tryCatch<PaginatedDocs<Product>>(payload.find({
-                            collection: 'products',
-                            where: {
-                                id: {
-                                    in: typeOfOrder,
-                                }
-                            }
-                        }))
-                    
-                        if (purchasedProductsError) {
-                            console.log(purchasedProductsError)
-                            return
-                        }
-                    
-                        const products = purchasedProducts?.docs
-                    
-                        console.log(products, '<----------- products')
-
-                        const productThatArePlans = products?.filter(product => product.productType);
-                        if (productThatArePlans?.length === 0) {
-                            console.log('no plans');
-                            // await sendUserEmail(docType.customer, payload);
-                            return;
-                        }
-
-                        const plansIds = productThatArePlans?.map(product => {
-                            return product.productType as Plan;
-                        });
-
-                        const [plans, plansError] = await tryCatch<PaginatedDocs<Plan>>(payload.find({
-                            collection: 'plans',
-                            where: {
-                                id: {
-                                    in: plansIds?.map(plan => plan.id as string),
-                                }
-                            }
-                        }));
-
-                        if (plansError) {
-                            console.log(plansError)
-                            return;
-                        }
-
-                        const [subscription, errorSub] = await newCreateSubscription(plans?.docs as Plan[], req.payload, docType, productThatArePlans as Product[]);
-
-                        if (errorSub) {
-                            console.log(errorSub)
-                            return;
-                        }
-
-                        await sendUserEmail(docType.customer, payload);
-
-                        console.log(subscription, '<----------- subscription')
-                    }
-                ]
-            }
         },
         {
             name: 'type',
@@ -252,7 +165,13 @@ const Orders: CollectionConfig = {
     ],
     hooks: {
         afterChange: [
-            creationEmailNotification
+            creationEmailNotification,
+            async ({ req, doc, operation }) => {
+                // on create or update, if the order is active and is a renewal or subscription, create a new subscription
+                if (doc?.status === 'active' && (doc?.type === 'renewal' || doc?.type === 'subscription')) {
+                    await createNewSubOnOrderChange(doc as Order, req)
+                }
+            }
         ],
         beforeChange: [
             populateCreatedBy,
@@ -260,6 +179,74 @@ const Orders: CollectionConfig = {
             
         ]
     },
+}
+
+async function createNewSubOnOrderChange(docType: Order,req: PayloadRequest) {
+    
+    const { payload } = req
+
+    const typeOfOrder = docType?.products?.map(product => {
+        if (typeof product === 'string') {
+            return product
+        } else {
+            return product.id
+        }
+    })
+
+    const [purchasedProducts, purchasedProductsError] = await tryCatch<PaginatedDocs<Product>>(payload.find({
+        collection: 'products',
+        where: {
+            id: {
+                in: typeOfOrder,
+            }
+        }
+    }))
+
+    if (purchasedProductsError) {
+        console.log(purchasedProductsError)
+        return
+    }
+
+    const products = purchasedProducts?.docs
+
+    console.log(products, '<----------- products')
+
+    const productThatArePlans = products?.filter(product => product.productType);
+    if (productThatArePlans?.length === 0) {
+        console.log('no plans');
+        // await sendUserEmail(docType.customer, payload);
+        return;
+    }
+
+    const plansIds = productThatArePlans?.map(product => {
+        return product.productType as Plan;
+    });
+
+    const [plans, plansError] = await tryCatch<PaginatedDocs<Plan>>(payload.find({
+        collection: 'plans',
+        where: {
+            id: {
+                in: plansIds?.map(plan => plan.id as string),
+            }
+        }
+    }));
+
+    if (plansError) {
+        console.log(plansError)
+        return;
+    }
+
+    const [subscription, errorSub] = await newCreateSubscription(plans?.docs as Plan[], payload, docType, productThatArePlans as Product[]);
+
+    if (errorSub) {
+        console.log(errorSub)
+        return;
+    }
+
+    await sendUserEmail(docType.customer, payload);
+
+    console.log(subscription, '<----------- subscription')
+    
 }
 
 export default Orders;

@@ -7,6 +7,7 @@ import { Subscription } from '../payload-types';
 import { PaginatedDocs } from 'payload/dist/mongoose/types';
 import { Response } from 'express';
 import { checkRole } from '../access/checkRole';
+import functionalities from '../fields/functionalities';
 
 async function getActiveSubscriptions(req: PayloadRequest, res: Response) {
     const { id } = req.params;
@@ -129,6 +130,7 @@ const Subscriptions: CollectionConfig = {
         },
         periodicity(),
         orderRelation(),
+        functionalities(),
     ],
     endpoints: [
 		{

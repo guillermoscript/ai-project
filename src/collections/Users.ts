@@ -4,6 +4,9 @@ import { anyone } from '../access/anyone';
 import { isAdmin, isAdminFieldLevel } from '../access/isAdmin';
 import { populateCreatedBy } from '../hooks/populateCreatedBy';
 import { populateLastModifiedBy } from '../hooks/populateLastModifiedBy';
+import { isAdminOrSelf } from '../access/isAdminOrSelf';
+import functionalities from '../fields/functionalities';
+import { checkRole } from '../access/checkRole';
 
 const Users: CollectionConfig = {
 	slug: 'users',
@@ -27,10 +30,14 @@ const Users: CollectionConfig = {
 				</html>
 			  `;
 			}
-		}
+		},
+		useAPIKey: true,
+		// exp time to 1 day
+		tokenExpiration: 60 * 60 * 24,
 	},
 	admin: {
 		useAsTitle: 'email',
+		
 		// user: 'admin'
 		defaultColumns: ['email', 'firstName', 'lastName', 'phone', 'address', 'roles'],
 		group: 'Información de usuarios',
@@ -39,7 +46,37 @@ const Users: CollectionConfig = {
 		// everyone can create a user
 		create: anyone,
 		// Admins can read all, but any other logged in user can only read themselves
-		read: anyone,
+		read: async ({ req: { user, payload } }) => {
+			if (!user) {
+				return false
+			}
+
+			if (typeof user === 'string') {
+				const userDoc = await payload.findByID({
+					collection: 'users',
+					id: user,
+				});
+
+				if (userDoc?.roles.includes('admin')) {
+					return true;
+				}
+				return {
+					id: {
+						equals: user,
+					},
+				}
+			} else {
+
+				if (user.roles.includes('admin')) {
+					return true
+				}
+				return {
+					id: {
+						equals: user.id
+					}
+				}
+			}
+		},
 		// Admins can update all, but any other logged in user can only update themselves
 		update: ({ req: { user } }) => {
 			if (!user) {
@@ -49,7 +86,9 @@ const Users: CollectionConfig = {
 				return true
 			}
 			return {
-				id: user.id
+				id: {
+					equals: user.id
+				}
 			}
 		},
 		// Only admins can delete
@@ -155,11 +194,20 @@ const Users: CollectionConfig = {
 			]
 		},
 		{
-			name: 'score',
-			label: 'Score',
-			type: 'number',
-			defaultValue: 0,
-			// required: true,
+			...functionalities({
+				saveToJWT: true,
+			}),
+		},
+		{
+			name: 'stripeCustomerID',
+			label: 'Stripe Customer',
+			type: 'text',
+			access: {
+				read: ({ req: { user } }) => checkRole(['admin'], user),
+			},
+			admin: {
+				position: 'sidebar',
+			},
 		},
 	],
 	hooks: {

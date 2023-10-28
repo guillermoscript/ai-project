@@ -7,6 +7,8 @@ import periodicity from '../fields/periodicity';
 import { populateCreatedBy } from '../hooks/populateCreatedBy';
 import { populateLastModifiedBy } from '../hooks/populateLastModifiedBy';
 import { slugField } from '../fields/slug';
+import { anyone } from '../access/anyone';
+import functionalities from '../fields/functionalities';
 
 const Plans: CollectionConfig = {
     slug: 'plans',
@@ -15,10 +17,10 @@ const Plans: CollectionConfig = {
         group: 'Información de productos',
     },
     access: {
-        create : isAdminOrEditor,
-        read : () => true,
-        update : isAdminOrEditor,
-        delete : isAdminOrEditor,
+        create: isAdminOrEditor,
+        read: anyone,
+        update: isAdminOrEditor,
+        delete: isAdminOrEditor,
     },
     fields: [
         {
@@ -47,6 +49,7 @@ const Plans: CollectionConfig = {
                 },
             ],
         },
+        functionalities(),
         categoryField(),
         {
             name: 'subscriptions',

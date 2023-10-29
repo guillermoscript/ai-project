@@ -34,8 +34,7 @@ const Categories: CollectionConfig = {
     },
     {
       name: 'image',
-      type: 'upload', 
-      required: true,
+      type: 'upload',
       relationTo: 'medias',
   },
     createdByField(),

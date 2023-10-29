@@ -1,27 +1,23 @@
-import path from 'path';
 import express from 'express';
 import payload from 'payload';
-import fs from 'fs';
-import { Readable } from 'stream';
+import path from 'path';
 import { OpenAI } from 'openai'
-import { PayloadRequest } from 'payload/types';
-import tryCatch from './utilities/tryCatch';
-import { PaginatedDocs } from 'payload/dist/mongoose/types';
-import { Subscription } from './payload-types';
-import { StatusCodes } from 'http-status-codes';
+import { MyTelegramContext, telegramStart } from './services/telegramBot';
+import { audioResume, audioTranscription } from './services/openAi';
+import { Telegraf, session } from 'telegraf';
+import downloadFile from './utilities/downloadFile';
+import { message } from 'telegraf/filters';
+import { runInactivateSubscriptionAndCreateRenewalOrder } from './services/cron';
 
 
 require('dotenv').config();
 const app = express();
 
-const openai = new OpenAI({
+export const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
-  timeout: 30000,
+  timeout: 90000,
 });
 
-const  bufferToStream = (buffer: Buffer) => {
-  return  Readable.from(buffer);
-}
 // Redirect root to Admin panel
 app.get('/', (_, res) => {
   res.redirect('/admin');
@@ -31,7 +27,6 @@ app.get('/', (_, res) => {
 
 const start = async () => {
   // Initialize Payload
-  
   const secret = process.env.PAYLOAD_SECRET
   const mongoURL = process.env.MONGODB_URI
 
@@ -45,136 +40,255 @@ const start = async () => {
 
   await payload.init({
     secret,
-    mongoURL,  express: app,
+    mongoURL, express: app,
     onInit: async () => {
       payload.logger.info(`Payload Admin URL: ${payload.getAdminURL()}`)
     },
   })
 
-  // TODO: add auth middleware to check if user is logged in and check if route works good
-  // Add your own express routes here
-  app.post('/api/files/upload', async (req, res) => {
-    const request = req as PayloadRequest
-    const audioFile = request.files?.file 
+  // // Add your own express routes here  
+  // const bot = new Telegraf<MyTelegramContext>(process.env.TELEGRAM_BOT_TOKEN);
 
-    const { user, payload } = request
+  // // Make session data available
+  // bot.use(session({
+  //   defaultSession: () => (
+  //     { users: [] }
+  //   )
+  // }));
 
-    // if (!user) {
-    //   return res.status(401).json({ message: 'Unauthorized' });
-    // }
+  // bot.start(telegramStart);
 
-    if (!audioFile) {
-    return res.status(400).json({ message: 'Audio file is required.' });
-    }
+  // // Login action
+  // bot.command('login', async (ctx) => {
 
-    // // const [activeSubscriptions, subError] = await tryCatch<PaginatedDocs<Subscription>>(payload.find({
-    // //   collection: 'subscriptions',
-    // //   where: {
-    // //     and: [
-    // //       {
-    // //         'user': {
-    // //           equals: user.id
-    // //         }
-    // //       },
-    // //       {
-    // //         'status': {
-    // //           equals: 'active'
-    // //         }
-    // //       }
-    // //     ]
-    // //   },
-    // //   sort: '-createdAt',
-    // // }));
+  //   // Send a message to the user to enter their credentials
+  //   await ctx.reply('Please enter your username and password in the following format: username:password');
 
-    // if (subError) {
-    //   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error getting active subscriptions', error: subError });
-    // }
+  //   // Listen for the user's response
+  //   bot.on(message('text'), async (ctx) => {
+  //     const credentials = ctx.message.text.split(':');
+  //     const email = credentials[0];
+  //     const password = credentials[1];
 
-    // if (activeSubscriptions?.docs.length === 0) {
-    //   return res.status(StatusCodes.BAD_REQUEST).json({ message: 'No active subscription found' });
-    // }
+  //     try {
+  //       // Send a request to your API to authenticate the user
+  //       const response = await payload.login({
+  //         collection: 'users',
+  //         data: {
+  //           email,
+  //           password
+  //         }
+  //       });
 
-    // if (activeSubscriptions || user.role === 'admin') {
-      try {
-        const audioStream = bufferToStream(audioFile.data);
-  
-        // Write the audio file to a new file in a folder
-        const filePath = path.join(__dirname, 'audio', audioFile.name);
-        const fileStream = fs.createWriteStream(filePath);
-        audioStream.pipe(fileStream);
-  
-        fileStream.on('finish', async () => {
-          try {
-            const resp = await openai.audio.transcriptions.create(
-              // @ts-ignore
-              fs.createReadStream(filePath), // Audio file
-              "whisper-1", // Whisper model name. 
-            );
-            const transcription = resp.text;
-  
-            // Delete the file from the server
-            fs.unlinkSync(filePath);
-  
-            const keyPointsExtraction = "Eres un experto en destilar la información en puntos clave. Basándose en el siguiente texto, identifique y enumere los puntos principales que se debatieron o sacaron a colación. Deben ser las ideas, conclusiones o temas más importantes que son cruciales para la esencia de la discusión. Tu objetivo es proporcionar una lista que alguien pueda leer para comprender rápidamente de qué se habló."
-            const actionItemExtraction = "Eres un experto en analizar conversaciones y extraer elementos de acción. Por favor, revisa el texto e identifica las tareas, asignaciones o acciones que se acordaron o mencionaron como necesarias. Puede tratarse de tareas asignadas a personas concretas o de acciones generales que el grupo haya decidido emprender. Enumere estos puntos de acción de forma clara y concisa."
-            const sentimentAnalysis = "Como IA experta en análisis del lenguaje y las emociones, su tarea consiste en analizar el sentimiento del siguiente texto. Tenga en cuenta el tono general de la discusión, la emoción transmitida por el lenguaje utilizado y el contexto en el que se utilizan las palabras y frases. Indique si el sentimiento es en general positivo, negativo o neutro, y explique brevemente su análisis cuando sea posible."
-  
-            const keyPoints = await createChatCompletition(transcription, keyPointsExtraction)
-            const actionItems = await createChatCompletition(transcription, actionItemExtraction)
-            const sentiment = await createChatCompletition(transcription, sentimentAnalysis)
-  
-            res.json({
-              transcription,
-              keyPoints,
-              actionItems,
-              sentiment
-            });
-  
-          } catch (error) {
-            console.log(error, '<----------- error');
-            res.status(500).json({ error: 'Error transcribing audio' });
-          }
-        });
-  
-        fileStream.on('error', (error) => {
-          console.log(error, '<----------- error');
-          res.status(500).json({ error: 'Error on writing audio file' });
-        });
-  
-      } catch (error) {
-        console.log(error, '<----------- error');
-        res.status(500).json({ error: 'Error transcribing audio' });
-      }
-    // } else {
-    //   res.status(401).json({ message: 'Unauthorized' });
-    // }
-  });
+  //       console.log(ctx.session?.users, 'users on login before')
+  //       // check if user is logged in
+  //       if (response.user) {
+
+  //         // If the user is authenticated, check for the user in the session
+  //         const isUserInSession = ctx.session?.users.find((user) => user.userId === ctx.from.id);
+
+  //         // If the user is not in the session, add them to the session
+  //         if (!isUserInSession) {
+  //           ctx.session?.users.push({
+  //             apikey: response.user.apiKey,
+  //             userId: ctx.from.id,
+  //             name: ctx.from.first_name,
+  //             payloadId: response.user.id
+  //           });
+
+  //           return ctx.reply('You have been successfully logged in!');
+  //         }
+
+  //         return ctx.reply('You are already logged in.');
+  //       } else {
+  //         return ctx.reply('Invalid username or password. Please try again.');
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       console.log((error as any)?.response?.data)
+  //       return await ctx.reply('An error occurred while logging in. Please try again later.');
+  //     }
+  //   });
+
+  //   return
+  // });
+
+  // bot.command('logout', async (ctx) => {
+  //   // validations
+  //   if (!ctx.session?.users.find((user) => user.userId === ctx.from.id)) {
+  //     return ctx.reply('You must be logged in to use this bot. Please use the /login command to log in.');
+  //   }
+
+  //   // remove user from session
+  //   ctx.session.users = ctx.session.users.filter((user) => user.userId !== ctx.from.id);
+
+  //   return ctx.reply('You have been successfully logged out!');
+  // });
+
+  // bot.on(message('voice'), async (ctx) => {
+  //   // validations
+  //   const user = ctx.session?.users.find((user) => user.userId === ctx.from.id)
+  //   if (!user) {
+  //     return ctx.reply('You must be logged in to use this bot. Please use the /login command to log in.');
+  //   }
+
+  //   const payloadUser = await payload.findByID({
+  //     collection: 'users',
+  //     id: ctx.session?.users.find((user) => user.userId === ctx.from.id)?.payloadId,
+  //   });
+
+  //   if (!payloadUser) {
+  //     return ctx.reply('Your user does not exist. Please use the /login command to log in.');
+  //   }
+
+  //   await ctx.reply('What do you wnat to do with this audio? /resumen or /transcripcion');
+
+  //   // save audio id on session
+  //   user.lastAudio = ctx.message.voice.file_id
+  //   console.log(ctx.session?.users, 'users on login before')
+  //   return
+
+  // });
+
+  // bot.command('resumen', async (ctx) => {
+  //   const user = ctx.session?.users.find((user) => user.userId === ctx.from.id)
+  //   if (!user) {
+  //     return ctx.reply('You must be logged in to use this bot. Please use the /login command to log in.');
+  //   }
+
+  //   const payloadUser = await payload.findByID({
+  //     collection: 'users',
+  //     id: ctx.session?.users.find((user) => user.userId === ctx.from.id)?.payloadId,
+  //   });
+
+  //   if (!payloadUser) {
+  //     return ctx.reply('Your user does not exist. Please use the /login command to log in.');
+  //   }
+
+  //   if (!user.lastAudio) {
+  //     return ctx.reply('Please send an audio file to make a resume.');
+  //   }
+
+  //   try {
+  //     await ctx.reply('Please wait while we transcribe your audio file...');
+
+  //     const link = await ctx.telegram.getFileLink(user.lastAudio);
+  //     const url = link.href;
+  //     const randomName = Math.random().toString(34).substring(7);
+  //     const filePath = path.join(__dirname, 'audio', `${ctx.from.first_name}-${randomName}.ogg`);
+  //     await downloadFile(url, filePath);
+  //     const response = await audioResume({
+  //       openai,
+  //       filePath,
+  //     });
+
+  //     if (!response.actionItems || !response.keyPoints || !response.transcription) {
+  //       return ctx.reply('An error occurred while transcribing your audio. Please try again later.');
+  //     }
+
+  //     const keyPointsText = (response.keyPoints as {
+  //       usage: OpenAI.Completions.CompletionUsage;
+  //       text: string;
+  //     })?.text
+  //     const actionItemsText = (response.actionItems as {
+  //       usage: OpenAI.Completions.CompletionUsage;
+  //       text: string;
+  //     })?.text
+
+  //     await ctx.reply(`Transcription: ${response.transcription}`);
+  //     await ctx.reply(`Key points: ${keyPointsText}`);
+  //     await ctx.reply(`Action items: ${actionItemsText}`);
+
+  //     // const metric = await payload.create<'metrics'>({
+  //     //   collection: 'metrics',
+  //     //   data: {
+  //     //     value: {
+  //     //       audioLength: ctx.message.voice.duration,
+  //     //       keyPoints: response.keyPoints.usage,
+  //     //       actionItems: response.actionItems.usage,
+  //     //     },
+  //     //     user: payloadUser.id,
+  //     //   }
+  //     // });
+
+  //     // console.log(metric, '<----------- metric');
+  //     user.lastAudio = null
+
+  //     return ctx.reply('Thank you for using our bot! We hope to see you again soon.')
+
+  //   } catch (error) {
+  //     console.error(error);
+  //     return ctx.reply('An error occurred while logging in. Please try again later.');
+  //   }
+  // });
+
+  // bot.command('transcripcion', async (ctx) => {
+  //   const user = ctx.session?.users.find((user) => user.userId === ctx.from.id)
+  //   if (!user) {
+  //     return ctx.reply('You must be logged in to use this bot. Please use the /login command to log in.');
+  //   }
+
+  //   const payloadUser = await payload.findByID({
+  //     collection: 'users',
+  //     id: ctx.session?.users.find((user) => user.userId === ctx.from.id)?.payloadId,
+  //   });
+
+  //   if (!payloadUser) {
+  //     return ctx.reply('Your user does not exist. Please use the /login command to log in.');
+  //   }
+
+  //   if (!user.lastAudio) {
+  //     return ctx.reply('Please send an audio file to transcribe.');
+  //   }
+
+  //   try {
+  //     await ctx.reply('Please wait while we transcribe your audio file...');
+  //     const link = await ctx.telegram.getFileLink(user.lastAudio);
+  //     const url = link.href;
+  //     const randomName = Math.random().toString(34).substring(7);
+  //     const filePath = path.join(__dirname, 'audio', `${ctx.from.first_name}-${randomName}.ogg`);
+  //     await downloadFile(url, filePath);
+  //     const response = await audioTranscription({
+  //       openai,
+  //       filePath,
+  //     });
+
+  //     // const metric = await payload.create<'metrics'>({
+  //     //   collection: 'metrics',
+  //     //   data: {
+  //     //     value: {
+  //     //       audioLength: ctx.message.voice.duration,
+  //     //     },
+  //     //     user: payloadUser.id,
+  //     //   }
+  //     // });
+
+  //     // console.log(metric, '<----------- metric');
+
+  //     return ctx.reply(response);
+
+  //   } catch (error) {
+  //     console.error(error);
+  //     return ctx.reply('An error occurred while logging in. Please try again later.');
+  //   }
+  // })
+
+  // app.get('/cron', async (req, res) => {
+  //   try {
+  //     const data = await runInactivateSubscriptionAndCreateRenewalOrder()
+  //     res.json(data)
+  //   } catch (error) {
+  //     res.json(error)
+  //   }
+  // })
 
 
+  // bot.launch();
 
+  // // Enable graceful stop
+  // process.once('SIGINT', () => bot.stop('SIGINT'));
+  // process.once('SIGTERM', () => bot.stop('SIGTERM'));
   app.listen(3000);
 }
 
 start();
-
-
-async function createChatCompletition(transcription: string, systemPrompt: string) {
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo-16k",
-    messages: [{
-        "role": "system",
-        "content": systemPrompt
-    },
-    {
-        "role": "user",
-        "content": transcription
-    }],
-    temperature: 0,
-    max_tokens: 14324,
-    // frequency_penalty: 0.14,
-    // presence_penalty: 0.15,
-  });
-
-  return response?.choices[0].message
-}

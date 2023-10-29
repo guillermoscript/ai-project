@@ -4,3 +4,7 @@ node_modules
 .DS_Store
 .env
 /src/media
+/src/audio
+/src/audios
+/src/user-documents
+/src/python/__pycache__

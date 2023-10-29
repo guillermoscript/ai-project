@@ -9,6 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 import { PaginatedDocs } from 'payload/dist/mongoose/types';
 import { checkRole } from '../access/checkRole';
 import tryCatch from '../utilities/tryCatch';
+import payload from 'payload';
 
 const isAdminOrSelf: any = ({ req: { user } }: any) => {
 
@@ -34,7 +35,7 @@ const PaymentMethods: CollectionConfig = {
     admin: {
         useAsTitle: 'title',
         hidden(args) {
-            const {  user  } = args
+            const { user } = args
             return !checkRole(['admin', 'editor'], user as unknown as User)
         },
         group: 'Información de usuarios',
@@ -42,8 +43,8 @@ const PaymentMethods: CollectionConfig = {
     access: {
         create: isAdminOrSelf,
         read: isAdminOrSelf,
-        update : isAdminOrSelf,
-        delete : isAdminOrSelf
+        update: isAdminOrSelf,
+        delete: isAdminOrSelf
     },
     fields: [
         {
@@ -51,7 +52,6 @@ const PaymentMethods: CollectionConfig = {
             type: 'relationship',
             label: 'Usuario',
             relationTo: 'users',
-            hasMany: true,
         },
         {
             name: 'title',
@@ -85,6 +85,18 @@ const PaymentMethods: CollectionConfig = {
                     label: 'Transferencia bancaria',
                     value: 'bankTransfer',
                 },
+                {
+                    label: 'Criptomoneda',
+                    value: 'crypto',
+                },
+                {
+                    label: 'Stripe',
+                    value: 'stripe',
+                },
+                {
+                    label: 'Binance',
+                    value: 'binance',
+                }
             ],
         },
         {
@@ -196,6 +208,25 @@ const PaymentMethods: CollectionConfig = {
                 VenezuelanBanks(),
             ],
         },
+        {
+            name: 'stripe',
+            type: 'group',
+            admin: {
+                condition: (data) => data.paymentMethodType === 'stripe'
+            },
+            label: 'Stripe',
+            fields: [
+                {
+                    name: 'stripePaymentMethodId',
+                    type: 'text',
+                    label: 'ID del método de pago de Stripe',
+                },
+            ],
+        },
+        {
+            name: 'default',
+            type: 'checkbox',
+        },
         createdByField(),
         slugField('title'),
     ],
@@ -203,7 +234,32 @@ const PaymentMethods: CollectionConfig = {
         beforeChange: [
             populateCreatedBy,
             populateLastModifiedBy,
-            
+            async ({ data, req, operation }) => {
+                if (operation === 'create') {
+                    if (data.default === true) {
+                        try {
+                            const update = await payload.update<'payment-methods'>({
+                                collection: 'payment-methods',
+                                where: {
+                                    paymentsOfUser: {
+                                        equals: data.paymentsOfUser
+                                    }
+                                },
+                                data: {
+                                    default: false
+                                }
+                            })
+                            console.log(update, '<----------- update')
+                            
+                            return data
+                        } catch (error) {
+                            console.log(error, '<----------- error')
+                            return data
+                        }
+                    }
+                }
+                return data
+            }
         ]
     },
     endpoints: [
@@ -215,7 +271,7 @@ const PaymentMethods: CollectionConfig = {
                 const { id } = req.params;
                 const user = req.user;
                 console.log(user, 'user')
-                
+
                 if (!user) {
                     res.status(StatusCodes.UNAUTHORIZED).send('No se ha iniciado sesión');
                 }
@@ -234,7 +290,7 @@ const PaymentMethods: CollectionConfig = {
                 }))
 
                 if (error || !paymentMethods) {
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message: "Error al obtener los métodos de pago del usuario", error});
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({ message: "Error al obtener los métodos de pago del usuario", error });
                 }
 
                 res.send(paymentMethods?.docs);

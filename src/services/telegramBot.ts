@@ -4,9 +4,14 @@ import { message } from 'telegraf/filters';
 import type { Update } from "telegraf/types";
 import path from 'path';
 import downloadFile from '../utilities/downloadFile';
-import { audioResume } from './openAi';
-import { openai } from '../server';
+import { audioResume } from './audioResume';
+import OpenAI from 'openai';
 
+require('dotenv').config();
+const openai = new OpenAI({
+    apiKey: process.env.OPEN_AI_KEY,
+    timeout: 90000,
+});
 
 
 export interface MyTelegramContext<U extends Update = Update> extends Context<U> {

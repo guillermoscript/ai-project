@@ -1,5 +1,6 @@
-import { buildConfig } from 'payload/config';
 import path from 'path';
+import payload from 'payload';
+import { buildConfig } from 'payload/config';
 import Users from './collections/Users';
 import Categories from './collections/Categories';
 import Comments from './collections/Comments';
@@ -27,42 +28,50 @@ import stripePlugin from "@payloadcms/plugin-stripe";
 import { createCheckoutSession } from './endpoints/stripe/create-checkout-session';
 import { chargeCheckoutSession } from './endpoints/stripe/charge-session-checkout';
 import { createPaymentSession } from './endpoints/stripe/create-payment-method';
-import payload from 'payload';
-import { Plan, Product, User } from './payload-types';
 import { binanceOrderCreationHandler } from './endpoints/binance/binance-order';
 import { binanceWebhookHandler } from './endpoints/binance/webhook';
-import { audioUpload, audioUserTranscription, fileUploadResume, transcriptionSummary } from './endpoints/ai/audio';
-import UserDocuments from './collections/UserDocuments';
 import { UploadUserPdf } from './endpoints/ai/pdf';
+import UserDocuments from './collections/UserDocuments';
+import { Plan, Product, User } from './payload-types';
+import { audioUserTranscription } from './endpoints/ai/audioUserTranscription';
+import  {transcriptionSummary} from './endpoints/ai/transcriptionSummary';
+import { fileUploadResume } from './endpoints/ai/fileUploadResume';
 
-const mockModulePath = path.resolve(__dirname, './emptyModuleMock.js')
 export const srcPath = path.resolve(__dirname, '../src')
 
+
 export default buildConfig({
-  serverURL: 'http://localhost:3000',
+  serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL ??
+  "https://api.casttens.com",
   admin: {
     user: Users.slug,
     meta: {
       titleSuffix: 'Admin - Summary App',
     },
-    webpack: config => ({
-      ...config,
-      resolve: {
-        ...config.resolve,
-        alias: {
-          ...config.resolve?.alias,
-          [path.resolve(__dirname, 'endpoints/stripe/create-checkout-session')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/stripe/charge-session-checkout')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/stripe/create-payment-method')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/binance/binance-order')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/binance/webhook')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/ai/audio')]: mockModulePath,
-          [path.resolve(__dirname, 'endpoints/ai/pdf')]: mockModulePath,
-          stripe: mockModulePath,
-          express: mockModulePath,
+    webpack: (config) => {      
+      return {
+        ...config,
+        resolve: {
+          ...config.resolve,
+          alias: {
+            ...config.resolve?.alias,
+            
+            // MOCKS
+            [path.resolve(__dirname, 'services/audioTranscription')]: path.resolve(__dirname, './mocks/audioTranscription.js'),
+            [path.resolve(__dirname, 'services/createChatCompletition')]: path.resolve(__dirname, './mocks/createChatCompletition.js'),
+            [path.resolve(__dirname, 'services/audioResume')]: path.resolve(__dirname, './mocks/audioResume.js'),
+
+            // PDF
+            [path.resolve(__dirname, 'endpoints/ai/pdf')]: path.resolve(__dirname, './mocks/pdf.js'),
+
+            // AUDIO
+            [path.resolve(__dirname, 'endpoints/ai/audioUserTranscription')]: path.resolve(__dirname, './mocks/audioUserTranscription.js'),
+            [path.resolve(__dirname, 'endpoints/ai/fileUploadResume')]: path.resolve(__dirname, './mocks/fileUploadResume.js'),
+            [path.resolve(__dirname, 'endpoints/ai/transcriptionSummary')]: path.resolve(__dirname, './mocks/transcriptionSummary.js'),
+          },
         },
-      },
-    }),
+      }
+    },
   },
   collections: [
     Audios,
@@ -263,11 +272,6 @@ export default buildConfig({
       path: '/transcription/summary',
       method: 'post',
       handler: transcriptionSummary
-    },
-    {
-      path: '/audio/upload',
-      method: 'post',
-      handler: audioUpload
     },
     {
       path: '/audio/user-transcription',

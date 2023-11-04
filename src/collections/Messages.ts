@@ -5,8 +5,6 @@ import { populateLastModifiedBy } from '../hooks/populateLastModifiedBy';
 import { slugField } from '../fields/slug';
 import { Message, User } from '../payload-types';
 import { checkRole } from '../access/checkRole';
-import { openai } from '../server';
-import axios from 'axios';
 
 
 const hasAccessOrIsOwner = ({ req, doc }: { req: PayloadRequest, doc: Message }) => {

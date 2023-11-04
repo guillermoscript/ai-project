@@ -1,0 +1,75 @@
+
+name: Build and deploy to production 
+
+on:
+  push:
+    branches: [ "main" ]
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-20.04
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: putting the enviroment for container
+        run: | 
+          echo "MONGODB_URI=${{ vars.MONGODB_URI }}" >> .env.production
+          echo "PAYLOAD_SECRET=${{ vars.PAYLOAD_SECRET }}" >> .env.production
+          echo "SERVER_URL=${{ vars.SERVER_URL }}" >> .env.production
+          echo "OPEN_AI_KEY=${{ vars.OPEN_AI_KEY }}" >> env.production
+          echo "CLIENT_ID=${{ vars.CLIENT_ID }}" >> env.production
+          echo "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}" >> env.production
+          echo "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}" >> env.production
+          echo "SMTP_HOST=${{ vars.SMTP_HOST }}" >> env.production
+          echo "SMTP_PORT=${{ vars.SMTP_PORT }}" >> env.production
+          echo "SMTP_USER=${{ vars.SMTP_USER }}" >> env.production
+          echo "SMTP_PASSWORD=${{ vars.SMTP_PASSWORD }}" >> env.production
+          echo "SMTP_FROM=${{ vars.SMTP_FROM }}" >> env.production
+          echo "TELEGRAM_BOT_TOKEN=${{ vars.TELEGRAM_BOT_TOKEN }}" >> env.production
+          echo "NODE_ENV=${{ vars.NODE_ENV }}" >> env.production
+          echo "STRIPE_SECRET_KEY=${{ vars.STRIPE_SECRET_KEY }}" >> env.production
+          echo "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ vars.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}" >> env.production
+          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> env.production
+          echo "BINANCE_API_KEY=${{ vars.BINANCE_API_KEY }}" >> env.production
+          echo "BINANCE_API_KEY_SECRET=${{ vars.BINANCE_API_KEY_SECRET }}" >> env.production
+          echo "DB_PSS=${{ vars.DB_PSS }}" >> env.production
+          echo "SUPABASE_URL=${{ vars.SUPABASE_URL }}" >> env.production
+          echo "SUPABASE_KEY=${{ vars.SUPABASE_KEY }}" >> env.production
+
+      - name: build Nodejs app
+        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest -f ./Dockerfile .
+
+      - name: build Python app
+        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/Python:latest -f ./src/python/Dockerfile .
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: push to registry 
+        run: docker push ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+
+      # TODO: add ssh action to deploy to production TO MY OWN SERVER
+      # - name: Deploy to production
+      #   uses: fifsky/ssh-action@master
+      #   with:
+      #     command: |                                                            TODO: check if this env is injected
+      #       docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+      #       cd ${{ vars.SERVER_PATH }}
+      #       docker compose pull
+      #       docker compose up -d --force-recreate
+      #       docker rmi -f $(docker images -f "dangling=true" -q)
+      #     host: ${{ vars.SERVER_IP }}
+      #     user: ${{ vars.SERVER_USER }}
+      #     key: ${{ secrets.SECRET_KEY }}      
+    

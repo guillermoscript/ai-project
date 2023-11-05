@@ -56,10 +56,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: push python image to registry
-        run: docker push ${{ github.actor }}/${{ vars.IMAGE_NAME }}/python:latest
+        run: docker push ${{ env.REGISTRY }}/${{ github.actor }}/${{ vars.IMAGE_NAME }}/python:latest
 
       - name: push node image to registry
-        run: docker push ${{ github.actor }}/${{ vars.IMAGE_NAME }}:latest
+        run: docker push ${{ env.REGISTRY }}/${{ github.actor }}/${{ vars.IMAGE_NAME }}:latest
       
       # - name: Deploy to production
       #   uses: fifsky/ssh-action@master

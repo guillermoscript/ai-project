@@ -4,6 +4,10 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# show current directory structure
+RUN ls -al
+
+
 # Copy the requirements file to the container
 COPY app/requirements.txt .
 

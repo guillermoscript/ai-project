@@ -20,27 +20,27 @@ jobs:
 
       - name: putting the enviroment for container
         run: | 
-          echo "MONGODB_URI=${{ vars.MONGODB_URI }}" >> .env.production
-          echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> .env.production
-          echo "SERVER_URL=${{ vars.SERVER_URL }}" >> .env.production
-          echo "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}" >> env.production
-          echo "CLIENT_ID=${{ vars.CLIENT_ID }}" >> env.production
-          echo "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}" >> env.production
-          echo "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}" >> env.production
-          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> env.production
-          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> env.production
-          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> env.production
-          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> env.production
-          echo "SMTP_FROM=${{ secrets.SMTP_FROM }}" >> env.production
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> env.production
-          echo "NODE_ENV=${{ vars.NODE_ENV }}" >> env.production
-          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> env.production
-          echo "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}" >> env.production
-          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> env.production
-          echo "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}" >> env.production
-          echo "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}" >> env.production
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> env.production
-          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> env.production
+          echo "MONGODB_URI=${{ vars.MONGODB_URI }}" >> .env
+          echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> .env
+          echo "SERVER_URL=${{ vars.SERVER_URL }}" >> .env
+          echo "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}" >> .env
+          echo "CLIENT_ID=${{ vars.CLIENT_ID }}" >> .env
+          echo "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}" >> .env
+          echo "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}" >> .env
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
+          echo "SMTP_FROM=${{ secrets.SMTP_FROM }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "NODE_ENV=${{ vars.NODE_ENV }}" >> .env
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
+          echo "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}" >> .env
+          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> .env
+          echo "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}" >> .env
+          echo "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
 
       - name: build Nodejs app
         run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest .

@@ -43,7 +43,7 @@ jobs:
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
 
       - name: build Nodejs app
-        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest .
+        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/node:latest .
 
       - name: build Python app
         run: cd ./src/python && docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest .
@@ -56,10 +56,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: push python image to registry
-        run: docker push  ghcr.io/${{ github.actor }}/${{ vars.IMAGE_NAME }}/python:latest
+        run: docker push ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest
 
       - name: push node image to registry
-        run: docker push  ghcr.io/${{ github.actor }}/${{ vars.IMAGE_NAME }}:latest
+        run: docker push ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/node:latest
       
       # - name: Deploy to production
       #   uses: fifsky/ssh-action@master

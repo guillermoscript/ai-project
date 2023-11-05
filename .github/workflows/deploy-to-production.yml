@@ -46,7 +46,7 @@ jobs:
       #   run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest .
 
       - name: build Python app
-        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest -f ./src/python/Dockerfile .
+        run: cd ./src/python && docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest .
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2

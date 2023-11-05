@@ -6,6 +6,7 @@ on:
     branches: [ "main" ]
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: guillermoscript/ai-project
 
 jobs:
   build-and-push-image:

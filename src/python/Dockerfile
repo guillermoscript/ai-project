@@ -5,7 +5,10 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # show current directory structure
-RUN ls -al
+RUN echo "Current directory structure is:" && ls -la
+
+
+RUN echo '${PWD}'
 
 
 # Copy the requirements file to the container

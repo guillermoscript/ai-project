@@ -6,6 +6,8 @@ WORKDIR /home/node/app
 COPY package*.json ./
 
 COPY . .
+COPY .env.production .env
+
 RUN yarn install
 RUN yarn build
 
@@ -21,6 +23,8 @@ COPY yarn.lock ./
 RUN yarn install --production
 COPY --from=builder /home/node/app/dist ./dist
 COPY --from=builder /home/node/app/build ./build
+COPY --from=builder /home/node/app/.env ./dist/.env
+COPY --from=builder /home/node/app/.env ./build/.env
 
 EXPOSE 3000
 

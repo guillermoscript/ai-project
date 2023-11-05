@@ -43,10 +43,10 @@ jobs:
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
 
       - name: build Nodejs app
-        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/node:latest .
+        run: docker build -t ghcr.io/guillermoscript/ai-project/node:latest .
 
       - name: build Python app
-        run: cd ./src/python && docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest .
+        run: cd ./src/python && docker build -t ghcr.io/guillermoscript/ai-project/python:latest .
 
       - name: Log in to the Container registry
         uses: docker/login-action@v2
@@ -56,10 +56,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: push python image to registry
-        run: docker push ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/python:latest
+        run: docker push ghcr.io/guillermoscript/ai-project/python:latest
 
       - name: push node image to registry
-        run: docker push ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/node:latest
+        run: docker push ghcr.io/guillermoscript/ai-project/node:latest
       
       # - name: Deploy to production
       #   uses: fifsky/ssh-action@master

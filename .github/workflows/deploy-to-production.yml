@@ -43,7 +43,7 @@ jobs:
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> env.production
 
       - name: build Nodejs app
-        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest -f ./Dockerfile .
+        run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}:latest -f .
 
       - name: build Python app
         run: docker build -t ${{ env.REGISTRY }}/${{ vars.IMAGE_NAME }}/Python:latest -f ./src/python/Dockerfile .

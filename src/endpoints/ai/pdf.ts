@@ -1,6 +1,6 @@
-import { PayloadHandler } from "payload/config";
 import fs from 'fs';
 import path from 'path';
+import { PayloadHandler } from "payload/config";
 import { srcPath } from "../../payload.config";
 import axios from "axios";
 import mime from 'mime';
@@ -10,6 +10,11 @@ export const UploadUserPdf: PayloadHandler = async (req, res): Promise<void> => 
     const { documentId, chatId } = req.body
 
     if (!documentId) {
+        res.status(400).send('Bad request')
+        return
+    }
+
+    if (!chatId) {
         res.status(400).send('Bad request')
         return
     }

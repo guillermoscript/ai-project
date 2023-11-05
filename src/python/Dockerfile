@@ -4,15 +4,11 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# show current directory structure
-RUN echo "Current directory structure is:" && ls -la
-
-
-RUN echo '${PWD}'
-
+# Add the current directory contents into the container at /app
+ADD . /app
 
 # Copy the requirements file to the container
-COPY app/requirements.txt .
+COPY requirements.txt .
 
 # Install the Python dependencies
 RUN apt-get update && apt-get install -y ffmpeg && pip install --no-cache-dir -r requirements.txt

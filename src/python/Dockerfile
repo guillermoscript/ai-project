@@ -8,7 +8,7 @@ WORKDIR /app
 ADD . /app
 
 # Copy the requirements file to the container
-COPY requirements.txt .
+COPY /app/requirements.txt .
 
 # Install the Python dependencies
 RUN apt-get update && apt-get install -y ffmpeg && pip install --no-cache-dir -r requirements.txt

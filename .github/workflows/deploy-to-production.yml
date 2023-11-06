@@ -19,8 +19,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: putting the enviroment for container
+      - name: putting the enviroment for container of node
         run: | 
+          touch .env
           echo "MONGODB_URI=${{ vars.MONGODB_URI }}" >> .env
           echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> .env
           echo "SERVER_URL=${{ vars.SERVER_URL }}" >> .env
@@ -37,9 +38,17 @@ jobs:
           echo "NODE_ENV=${{ vars.NODE_ENV }}" >> .env
           echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
           echo "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}" >> .env
-          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> .env
           echo "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}" >> .env
           echo "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+
+      - name: putting the enviroment for container of pythond
+        run: | 
+          cd ./src/python
+          touch .env
+          echo "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}" >> .env
+          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
 

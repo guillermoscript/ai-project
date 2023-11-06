@@ -6,7 +6,6 @@ WORKDIR /home/node/app
 COPY package*.json ./
 
 COPY . .
-COPY .env.production .env
 
 RUN yarn install
 RUN yarn build

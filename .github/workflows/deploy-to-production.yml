@@ -42,6 +42,7 @@ jobs:
           echo "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}" >> .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+          cat .env
 
       - name: putting the enviroment for container of pythond
         run: | 
@@ -51,6 +52,7 @@ jobs:
           echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> .env
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+          cat .env
 
       - name: Log in to the Container registry
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
@@ -80,6 +82,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-node.outputs.tags }}
           labels: ${{ steps.meta-node.outputs.labels }}
+          secret-envs: MONGODB_URI=${{ vars.MONGODB_URI }}, PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}, SERVER_URL=${{ vars.SERVER_URL }}, OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}, CLIENT_ID=${{ vars.CLIENT_ID }}, PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}, PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}, SMTP_HOST=${{ secrets.SMTP_HOST }}, SMTP_PORT=${{ secrets.SMTP_PORT }}, SMTP_USER=${{ secrets.SMTP_USER }}, SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}, SMTP_FROM=${{ secrets.SMTP_FROM }}, TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}, NODE_ENV=${{ vars.NODE_ENV }}, STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}, STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}, BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}, BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}, SUPABASE_URL=${{ secrets.SUPABASE_URL }}, SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
 
       - name: Build and push Docker image for python
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
@@ -88,6 +91,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-python.outputs.tags }}
           labels: ${{ steps.meta-python.outputs.labels }}
+          secret-envs: OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}, FLASK_ENV=${{ vars.FLASK_ENV }}, SUPABASE_URL=${{ secrets.SUPABASE_URL }}, SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
       
       - name: Deploy to production
         uses: fifsky/ssh-action@master

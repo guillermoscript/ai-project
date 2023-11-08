@@ -38,7 +38,7 @@ import  {transcriptionSummary} from './endpoints/ai/transcriptionSummary';
 import { fileUploadResume } from './endpoints/ai/fileUploadResume';
 
 export const srcPath = path.resolve(__dirname, '../src')
-
+const mockModulePath = path.resolve(__dirname, './emptyModuleMock.js')
 
 export default buildConfig({
   serverURL: process.env.PAYLOAD_PUBLIC_SERVER_URL ??
@@ -68,6 +68,20 @@ export default buildConfig({
             [path.resolve(__dirname, 'endpoints/ai/audioUserTranscription')]: path.resolve(__dirname, './mocks/audioUserTranscription.js'),
             [path.resolve(__dirname, 'endpoints/ai/fileUploadResume')]: path.resolve(__dirname, './mocks/fileUploadResume.js'),
             [path.resolve(__dirname, 'endpoints/ai/transcriptionSummary')]: path.resolve(__dirname, './mocks/transcriptionSummary.js'),
+
+            // stripe 
+            // [path.resolve(__dirname, 'endpoints/stripe/create-payment-method')]: path.resolve(__dirname, './mocks/stripe/create-payment-method.js'),
+            // [path.resolve(__dirname, 'endpoints/stripe/charge-session-checkout')]: path.resolve(__dirname, './mocks/charge-session-checkout.js'),
+            // [path.resolve(__dirname, 'endpoints/stripe/create-payment-intent')]: path.resolve(__dirname, './mocks/create-payment-intent.js'),
+            // [path.resolve(__dirname, 'endpoints/stripe/create-checkout-session')]: path.resolve(__dirname, './mocks/create-checkout-session.js'),
+
+            // binance
+            [path.resolve(__dirname, 'endpoints/binance/binance-order')]: path.resolve(__dirname, './mocks/binance-order.js'),
+            [path.resolve(__dirname, 'endpoints/binance/webhook')]: path.resolve(__dirname, './mocks/webhook.js'),
+
+            // stripe
+            stripe: mockModulePath,
+            express: mockModulePath,
           },
         },
       }
@@ -238,21 +252,21 @@ export default buildConfig({
     }),
   ],
   endpoints: [
-    {
-      path: '/create-checkout-session',
-      method: 'post',
-      handler: createCheckoutSession,
-    },
-    {
-      path: '/charge-session-checkout',
-      method: 'post',
-      handler: chargeCheckoutSession,
-    },
-    {
-      path: '/create-payment-method',
-      method: 'post',
-      handler: createPaymentSession,
-    },
+    // {
+    //   path: '/create-checkout-session',
+    //   method: 'post',
+    //   handler: createCheckoutSession,
+    // },
+    // {
+    //   path: '/charge-session-checkout',
+    //   method: 'post',
+    //   handler: chargeCheckoutSession,
+    // },
+    // {
+    //   path: '/create-payment-method',
+    //   method: 'post',
+    //   handler: createPaymentSession,
+    // },
     {
       path: '/create-binance-order',
       method: 'post',

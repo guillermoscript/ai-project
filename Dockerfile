@@ -51,6 +51,7 @@ COPY --from=builder /home/node/app/dist ./dist
 COPY --from=builder /home/node/app/build ./build
 COPY --from=builder /home/node/app/.env ./dist/.env
 COPY --from=builder /home/node/app/.env ./build/.env
+COPY --from=builder /home/node/app/.env ./.env
 
 EXPOSE 3000
 

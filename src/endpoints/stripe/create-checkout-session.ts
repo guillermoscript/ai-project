@@ -83,8 +83,8 @@ export const createCheckoutSession: PayloadHandler = async (req, res): Promise<v
                 setup_future_usage: 'off_session',
             },
             mode: 'payment',
-            success_url: 'http://localhost:3001/checkout/success',
-            cancel_url: 'http://localhost:3001/checkout/cancel',
+            success_url: `${process.env.PAYLOAD_PUBLIC_SITE_URL}/checkout/success`,
+            cancel_url: `${process.env.PAYLOAD_PUBLIC_SITE_URL}/checkout/cancel`,
             metadata: {
                 productId: productId,
             },

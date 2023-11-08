@@ -1,7 +1,8 @@
 import type { PayloadHandler } from 'payload/config'
-import Stripe from 'stripe'
+import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = new Stripe(stripeSecretKey, {
     apiVersion: '2022-08-01',
 })
 
@@ -53,8 +54,8 @@ export const createPaymentSession: PayloadHandler = async (req, res): Promise<vo
             payment_method_types: ['card'],
             customer: stripeCustomerID,
             mode: 'setup',
-            success_url: 'http://localhost:3001/checkout/success',
-            cancel_url: 'http://localhost:3001/checkout/cancel',
+            success_url: `${process.env.PAYLOAD_PUBLIC_SITE_URL}/checkout/success`,
+            cancel_url: `${process.env.PAYLOAD_PUBLIC_SITE_URL}/checkout/cancel`,
         });
 
         const paymentMethod = await payload.create<'payment-methods'>({

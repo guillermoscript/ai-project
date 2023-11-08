@@ -121,7 +121,7 @@ export const chargeCheckoutSession: PayloadHandler = async (req, res): Promise<v
             automatic_payment_methods: { enabled: true },
             customer: stripeCustomerID,
             payment_method: paymentMethods.data[0].id,
-            return_url: 'http://localhost:3001/checkout/success',
+            return_url: `${process.env.PAYLOAD_PUBLIC_SITE_URL}/checkout/success`,
             off_session: true,
             confirm: true,
         });

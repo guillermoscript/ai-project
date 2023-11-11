@@ -16,93 +16,71 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: putting the enviroment for container of node
-        run: | 
-          touch .env
-          echo "MONGODB_URI=${{ vars.MONGODB_URI }}" >> .env
-          echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> .env
-          echo "SERVER_URL=${{ vars.SERVER_URL }}" >> .env
-          echo "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}" >> .env
-          echo "CLIENT_ID=${{ vars.CLIENT_ID }}" >> .env
-          echo "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}" >> .env
-          echo "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}" >> .env
-          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
-          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
-          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
-          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
-          echo "SMTP_FROM=${{ secrets.SMTP_FROM }}" >> .env
-          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
-          echo "NODE_ENV=${{ vars.NODE_ENV }}" >> .env
-          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> .env
-          echo "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}" >> .env
-          echo "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}" >> .env
-          echo "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}" >> .env
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
-          cat .env
-
-      - name: putting the enviroment for container of pythond
-        run: | 
-          cd ./src/python
-          touch .env
-          echo "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}" >> .env
-          echo "FLASK_ENV=${{ vars.FLASK_ENV }}" >> .env
-          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
-          echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
-          cat .env
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          buildkitd-flags: --debug
 
-      - name: Extract metadata (tags, labels) for Docker node 
-        id: meta-node 
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node
-          tags: latest
-
-      - name: Extract metadata (tags, labels) for Docker python
-        id: meta-python 
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python
-          tags: latest
-
-      - name: Build and push Docker image for node
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      - name: Build and push Docker image for Node
+        uses: docker/build-push-action@v5.0.0
         with:
           context: .
           push: true
-          tags: ${{ steps.meta-node.outputs.tags }}
-          labels: ${{ steps.meta-node.outputs.labels }}
-          secret-envs: MONGODB_URI=${{ vars.MONGODB_URI }}, PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}, SERVER_URL=${{ vars.SERVER_URL }}, OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}, CLIENT_ID=${{ vars.CLIENT_ID }}, PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}, PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}, SMTP_HOST=${{ secrets.SMTP_HOST }}, SMTP_PORT=${{ secrets.SMTP_PORT }}, SMTP_USER=${{ secrets.SMTP_USER }}, SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}, SMTP_FROM=${{ secrets.SMTP_FROM }}, TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}, NODE_ENV=${{ vars.NODE_ENV }}, STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}, STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}, BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}, BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}, SUPABASE_URL=${{ secrets.SUPABASE_URL }}, SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node
+          secrets: |
+            "MONGODB_URI=${{ vars.MONGODB_URI }}"
+            "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
+            "SERVER_URL=${{ vars.SERVER_URL }}"
+            "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
+            "CLIENT_ID=${{ vars.CLIENT_ID }}"
+            "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}"
+            "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}"
+            "SMTP_HOST=${{ secrets.SMTP_HOST }}"
+            "SMTP_PORT=${{ secrets.SMTP_PORT }}"
+            "SMTP_USER=${{ secrets.SMTP_USER }}"
+            "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}"
+            "SMTP_FROM=${{ secrets.SMTP_FROM }}"
+            "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}"
+            "NODE_ENV=${{ vars.NODE_ENV }}"
+            "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}"
+            "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}"
+            "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}"
+            "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}"
+            "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+            "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
+          # secrets: |
+          #   "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
+          #   "FLASK_ENV=${{ vars.FLASK_ENV }}"
+          #   "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+          #   "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
 
-      - name: Build and push Docker image for python
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      - name: Build and push Docker image for Python
+        uses: docker/build-push-action@v5.0.0
         with:
           context: ./src/python
           push: true
-          tags: ${{ steps.meta-python.outputs.tags }}
-          labels: ${{ steps.meta-python.outputs.labels }}
-          secret-envs: OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}, FLASK_ENV=${{ vars.FLASK_ENV }}, SUPABASE_URL=${{ secrets.SUPABASE_URL }}, SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python
+          labels: ${{ steps.meta-node.outputs.labels }}
+          secrets: |
+            "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
+            "FLASK_ENV=${{ vars.FLASK_ENV }}"
+            "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+            "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
+
       
-      - name: Deploy to production
-        uses: fifsky/ssh-action@master
-        with:
-          command: |                                                            
-            docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-            cd ${{ vars.SERVER_PATH }}
-            docker compose pull
-            docker compose up -d --force-recreate
-            docker rmi -f $(docker images -f "dangling=true" -q)
-          host: ${{ secrets.SERVER_IP }}
-          user: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SECRET_KEY }}      
+      # - name: Deploy to production
+      #   uses: fifsky/ssh-action@master
+      #   with:
+      #     command: |                                                            
+      #       docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+      #       cd ${{ vars.SERVER_PATH }}
+      #       docker compose pull
+      #       docker compose up -d --force-recreate
+      #       docker rmi -f $(docker images -f "dangling=true" -q)
+      #     host: ${{ secrets.SERVER_IP }}
+      #     user: ${{ secrets.SERVER_USER }}
+      #     key: ${{ secrets.SECRET_KEY }}      
     

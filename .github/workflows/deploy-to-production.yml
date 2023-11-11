@@ -62,7 +62,8 @@ jobs:
           context: .
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node
-          secret_files: |
+          platforms: linux/amd64,linux/arm64
+          secrets: |
             "MONGODB_URI=${{ vars.MONGODB_URI }}"
             "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
             "SERVER_URL=${{ vars.SERVER_URL }}"
@@ -90,6 +91,7 @@ jobs:
           context: ./src/python
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python
+          platforms: linux/amd64,linux/arm64
           labels: ${{ steps.meta-node.outputs.labels }}
           secrets: |
             "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
@@ -98,16 +100,15 @@ jobs:
             "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
 
       
-      # - name: Deploy to production
-      #   uses: fifsky/ssh-action@master
-      #   with:
-      #     command: |                                                            
-      #       docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-      #       cd ${{ vars.SERVER_PATH }}
-      #       docker compose pull
-      #       docker compose up -d --force-recreate
-      #       docker rmi -f $(docker images -f "dangling=true" -q)
-      #     host: ${{ secrets.SERVER_IP }}
-      #     user: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SECRET_KEY }}      
-    
+      - name: Deploy to production
+        uses: fifsky/ssh-action@master
+        with:
+          command: |                                                            
+            docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+            cd ${{ vars.SERVER_PATH }}
+            docker compose pull
+            docker compose up -d --force-recreate
+            docker rmi -f $(docker images -f "dangling=true" -q)
+          host: ${{ secrets.SERVER_IP }}
+          user: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SECRET_KEY }}      

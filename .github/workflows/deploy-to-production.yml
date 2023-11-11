@@ -58,7 +58,7 @@ jobs:
           secret_files: |
             "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
             "FLASK_ENV=${{ vars.FLASK_ENV }}"
-            
+
 
       - name: Build and push Docker image for Python
         uses: docker/build-push-action@v5.0.0
@@ -86,7 +86,7 @@ jobs:
       #     host: ${{ secrets.SERVER_IP }}
       #     user: ${{ secrets.SERVER_USER }}
       #     key: ${{ secrets.SECRET_KEY }}      
-          "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
+          # "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
 
       - name: Build and push Docker image for Python
         uses: docker/build-push-action@v5.0.0

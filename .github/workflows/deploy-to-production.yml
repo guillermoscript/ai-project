@@ -44,6 +44,13 @@ jobs:
           echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
           cat .env
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -56,37 +63,26 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node
           secret_files: |
+            "MONGODB_URI=${{ vars.MONGODB_URI }}"
+            "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
+            "SERVER_URL=${{ vars.SERVER_URL }}"
             "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
-            "FLASK_ENV=${{ vars.FLASK_ENV }}"
-
-
-      - name: Build and push Docker image for Python
-        uses: docker/build-push-action@v5.0.0
-        with:
-          context: ./src/python
-          push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python
-          labels: ${{ steps.meta-node.outputs.labels }}
-          secrets: |
-            "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
-            "FLASK_ENV=${{ vars.FLASK_ENV }}"
+            "CLIENT_ID=${{ vars.CLIENT_ID }}"
+            "PAYLOAD_PUBLIC_SITE_URL=${{ vars.PAYLOAD_PUBLIC_SITE_URL }}"
+            "PAYLOAD_PUBLIC_SERVER_URL=${{ vars.PAYLOAD_PUBLIC_SERVER_URL }}"
+            "SMTP_HOST=${{ secrets.SMTP_HOST }}"
+            "SMTP_PORT=${{ secrets.SMTP_PORT }}"
+            "SMTP_USER=${{ secrets.SMTP_USER }}"
+            "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}"
+            "SMTP_FROM=${{ secrets.SMTP_FROM }}"
+            "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}"
+            "NODE_ENV=${{ vars.NODE_ENV }}"
+            "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}"
+            "STRIPE_WEBHOOKS_ENDPOINT_SECRET=${{ secrets.STRIPE_WEBHOOKS_ENDPOINT_SECRET }}"
+            "BINANCE_API_KEY=${{ secrets.BINANCE_API_KEY }}"
+            "BINANCE_API_KEY_SECRET=${{ secrets.BINANCE_API_KEY_SECRET }}"
             "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
             "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}"
-
-      
-      # - name: Deploy to production
-      #   uses: fifsky/ssh-action@master
-      #   with:
-      #     command: |                                                            
-      #       docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
-      #       cd ${{ vars.SERVER_PATH }}
-      #       docker compose pull
-      #       docker compose up -d --force-recreate
-      #       docker rmi -f $(docker images -f "dangling=true" -q)
-      #     host: ${{ secrets.SERVER_IP }}
-      #     user: ${{ secrets.SERVER_USER }}
-      #     key: ${{ secrets.SECRET_KEY }}      
-          # "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
 
       - name: Build and push Docker image for Python
         uses: docker/build-push-action@v5.0.0

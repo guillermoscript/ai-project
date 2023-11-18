@@ -10,7 +10,7 @@ COPY package*.json ./
 
 COPY . .
 
-COPY .env.production .env
+COPY .env .env
 
 RUN yarn install --legacy-peer-deps
 

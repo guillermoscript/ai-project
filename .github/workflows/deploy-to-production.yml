@@ -62,7 +62,7 @@ jobs:
           context: .
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/node
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
           secrets: |
             "MONGODB_URI=${{ vars.MONGODB_URI }}"
             "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}"
@@ -91,7 +91,7 @@ jobs:
           context: ./src/python
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/python
-          platforms: linux/amd64,linux/arm64
+          # platforms: linux/amd64,linux/arm64
           labels: ${{ steps.meta-node.outputs.labels }}
           secrets: |
             "OPEN_AI_KEY=${{ secrets.OPEN_AI_KEY }}"
